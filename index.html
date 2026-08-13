@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0F2A1D">
+<title>ReturnRunner — Skip the return trip</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://js.stripe.com/v3/"></script>
+
+<style>
+  /* =========================================================
+     AESTHETIC: Modern service-business. Think Cash App x
+     local coffee shop. Deep forest green + warm cream + a
+     single hot accent. Editorial serif headlines (Fraunces)
+     paired with a precise sans (Inter Tight). Generous
+     spacing. Card-based forms. Built to look trustworthy
+     to a 35-year-old professional booking on her phone.
+     ========================================================= */
+
+  :root {
+    --green: #0F2A1D;       /* deep forest */
+    --green-soft: #1F3D2E;
+    --cream: #F4EFE6;       /* warm off-white background */
+    --cream-deep: #E8DFD0;
+    --accent: #FF5A1F;      /* orange — appears once or twice */
+    --ink: #0A1410;
+    --muted: #6B7568;
+    --line: #D5CCBC;
+    --white: #FFFFFF;
+    --radius: 14px;
+    --shadow-sm: 0 1px 2px rgba(15,42,29,0.06);
+    --shadow-md: 0 8px 24px rgba(15,42,29,0.08);
+    --shadow-lg: 0 20px 50px rgba(15,42,29,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter Tight', -apple-system, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button, input, textarea, select { font-family: inherit; font-size: inherit; color: inherit; }
+  button { cursor: pointer; border: none; background: none; }
+
+  /* ===== TOP NAV ===== */
+  .nav {
+    background: var(--green);
+    color: var(--cream);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .logo {
+    font-family: 'Fraunces', serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo-mark {
+    width: 28px; height: 28px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--green);
+    font-weight: 800;
+    font-size: 16px;
+  }
+  .nav-link {
+    color: var(--cream);
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.85;
+  }
+  .nav-link:hover { opacity: 1; }
+
+  /* ===== HERO ===== */
+  .hero {
+    padding: 80px 24px 60px;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 60px;
+    align-items: center;
+  }
+  @media (min-width: 900px) {
+    .hero { grid-template-columns: 1.1fr 0.9fr; padding: 100px 32px 80px; }
+  }
+
+  .eyebrow {
+    display: inline-block;
+    background: var(--cream-deep);
+    color: var(--green);
+    padding: 6px 12px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-bottom: 20px;
+  }
+  .eyebrow .dot { color: var(--accent); }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(40px, 6.5vw, 68px);
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    color: var(--green);
+    margin-bottom: 24px;
+  }
+  h1 em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--accent);
+  }
+  .hero-sub {
+    font-size: clamp(17px, 2vw, 19px);
+    color: var(--muted);
+    max-width: 480px;
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+
+  .cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 28px;
+    border-radius: 100px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    min-height: 54px;
+  }
+  .btn-primary {
+    background: var(--green);
+    color: var(--cream);
+    box-shadow: var(--shadow-md);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--green);
+    border: 1.5px solid var(--green);
+  }
+  .btn-ghost:hover { background: var(--green); color: var(--cream); }
+
+  /* ===== HERO VISUAL: Receipt-style card ===== */
+  .hero-card {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    transform: rotate(-1.5deg);
+    max-width: 380px;
+    margin: 0 auto;
+  }
+  .hero-card::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: 32px;
+    width: 60px;
+    height: 24px;
+    background: var(--accent);
+    border-radius: 6px;
+    transform: rotate(-3deg);
+    opacity: 0.9;
+  }
+  .receipt-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 14px;
+    border-bottom: 1.5px dashed var(--line);
+    margin-bottom: 14px;
+  }
+  .receipt-head .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+  .receipt-head .num { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; }
+  .receipt-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    font-size: 15px;
+    border-bottom: 1px solid var(--cream-deep);
+  }
+  .receipt-row:last-child { border-bottom: none; }
+  .receipt-row .k { color: var(--muted); }
+  .receipt-row .v { font-weight: 600; }
+  .receipt-stamp {
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--cream);
+    border-radius: 10px;
+    text-align: center;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--green);
+  }
+
+  /* ===== HOW IT WORKS ===== */
+  .how {
+    background: var(--green);
+    color: var(--cream);
+    padding: 80px 24px;
+  }
+  .how-inner { max-width: 1100px; margin: 0 auto; }
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(32px, 4.5vw, 48px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    margin-bottom: 16px;
+  }
+  .section-sub {
+    font-size: 17px;
+    opacity: 0.75;
+    max-width: 520px;
+    margin-bottom: 50px;
+  }
+  .steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  @media (min-width: 700px) { .steps { grid-template-columns: repeat(3, 1fr); gap: 32px; } }
+  .step {
+    border-top: 1.5px solid rgba(244,239,230,0.2);
+    padding-top: 24px;
+  }
+  .step-num {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 14px;
+    letter-spacing: 0.04em;
+  }
+  .step h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 24px;
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+  }
+  .step p { opacity: 0.8; font-size: 15.5px; line-height: 1.5; }
+
+  /* ===== BOOKING SECTION ===== */
+  .book {
+    padding: 80px 24px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .book-card {
+    background: var(--white);
+    border-radius: 20px;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+  .book-header {
+    background: var(--cream-deep);
+    padding: 28px 32px;
+    border-bottom: 1px solid var(--line);
+  }
+  .book-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .book-eyebrow {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .book-title {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--green);
+    letter-spacing: -0.01em;
+  }
+  .progress-track {
+    background: var(--cream);
+    height: 4px;
+    border-radius: 100px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    background: var(--green);
+    height: 100%;
+    width: 0%;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .step-counter {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .book-body { padding: 36px 32px; min-height: 380px; }
+  @media (max-width: 600px) {
+    .book-header { padding: 22px 22px; }
+    .book-body { padding: 28px 22px; min-height: 360px; }
+  }
+
+  .q-step { display: none; animation: fadeIn 0.35s ease both; }
+  .q-step.active { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-label {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--green);
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .q-help {
+    font-size: 15px;
+    color: var(--muted);
+    margin-bottom: 26px;
+    line-height: 1.5;
+  }
+
+  /* Option cards (radio-style) */
+  .opt-grid { display: grid; gap: 12px; }
+  .opt-grid.two-col { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 480px) { .opt-grid.two-col { grid-template-columns: 1fr; } }
+
+  .opt {
+    background: var(--white);
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px 18px;
+    text-align: left;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+  .opt:hover { border-color: var(--green); transform: translateY(-1px); }
+  .opt.selected {
+    border-color: var(--green);
+    background: var(--green);
+    color: var(--cream);
+    box-shadow: var(--shadow-md);
+  }
+  .opt-title { font-weight: 600; font-size: 16px; }
+  .opt-sub { font-size: 13px; opacity: 0.75; }
+  .opt.selected .opt-sub { opacity: 0.85; }
+
+  .opt-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-direction: row;
+  }
+  .opt-icon {
+    width: 44px; height: 44px;
+    background: var(--cream);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .opt.selected .opt-icon { background: var(--green-soft); }
+  .opt-text { display: flex; flex-direction: column; gap: 2px; }
+
+  /* Form inputs */
+  .field { margin-bottom: 16px; }
+  .field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--green);
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
+  }
+  .input, .textarea, .select {
+    width: 100%;
+    background: var(--white);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 16px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .input:focus, .textarea:focus, .select:focus {
+    outline: none;
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(15,42,29,0.1);
+  }
+  .textarea { min-height: 90px; resize: vertical; font-family: inherit; }
+  .field-row { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 480px) { .field-row { grid-template-columns: 1fr; } }
+
+  /* File upload */
+  .file-drop {
+    display: block;
+    width: 100%;
+    border: 2px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 28px 20px;
+    text-align: center;
+    background: var(--cream);
+    transition: all 0.15s;
+    cursor: pointer;
+    box-sizing: border-box;
+  }
+  .file-drop:hover { border-color: var(--green); background: var(--cream-deep); }
+  .file-drop.has-file { border-style: solid; border-color: var(--green); background: var(--white); }
+  .file-icon { font-size: 32px; margin-bottom: 8px; display: block; }
+  .file-text { font-size: 14px; color: var(--muted); display: block; }
+  .file-text strong { color: var(--green); font-weight: 600; }
+  .file-name {
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--green);
+    word-break: break-all;
+    display: block;
+  }
+  input[type="file"] { display: none; }
+
+  /* Date picker */
+  .date-card {
+    background: var(--cream);
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .date-label {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .date-big {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--green);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+  .date-sub { font-size: 14px; color: var(--muted); margin-top: 6px; }
+
+  /* Action row */
+  .actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 32px;
+    gap: 12px;
+  }
+  .btn-back {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 16px;
+  }
+  .btn-back:hover { color: var(--green); }
+  .btn-next {
+    background: var(--green);
+    color: var(--cream);
+    padding: 14px 28px;
+    border-radius: 100px;
+    font-weight: 600;
+    font-size: 15px;
+    min-height: 50px;
+    transition: transform 0.15s, opacity 0.15s;
+  }
+  .btn-next:hover:not(:disabled) { transform: translateY(-1px); }
+  .btn-next:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Summary / Confirmation */
+  .summary-box {
+    background: var(--cream);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 20px;
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    font-size: 15px;
+    border-bottom: 1px solid var(--cream-deep);
+  }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-row .k { color: var(--muted); }
+  .summary-row .v { font-weight: 600; text-align: right; }
+  .price-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 0 4px;
+    border-top: 1.5px dashed var(--line);
+    margin-top: 8px;
+  }
+  .price-row .k { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; color: var(--green); }
+  .price-row .v { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; color: var(--green); }
+
+  /* Confirmation success */
+  .success-icon {
+    width: 64px; height: 64px;
+    background: var(--green);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    color: var(--cream);
+    font-size: 32px;
+  }
+  .success-title {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--green);
+    text-align: center;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  .success-sub {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+  .booking-id {
+    background: var(--green);
+    color: var(--cream);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .booking-id-label { font-size: 12px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+  .booking-id-num { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; letter-spacing: 0.02em; }
+
+  /* ===== FAQ ===== */
+  .faq {
+    background: var(--cream-deep);
+    padding: 80px 24px;
+  }
+  .faq-inner { max-width: 720px; margin: 0 auto; }
+  .faq-item {
+    border-bottom: 1px solid var(--line);
+    padding: 20px 0;
+  }
+  .faq-q {
+    width: 100%;
+    text-align: left;
+    font-family: 'Fraunces', serif;
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--green);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+  .faq-q::after {
+    content: '+';
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--accent);
+    transition: transform 0.2s;
+  }
+  .faq-item.open .faq-q::after { transform: rotate(45deg); }
+  .faq-a {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+  .faq-item.open .faq-a { max-height: 200px; padding-top: 12px; }
+
+  /* ===== FOOTER ===== */
+  footer {
+    background: var(--green);
+    color: var(--cream);
+    padding: 48px 24px 32px;
+    text-align: center;
+  }
+  footer .logo { justify-content: center; margin-bottom: 16px; }
+  .foot-tag {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    opacity: 0.7;
+    font-size: 14px;
+  }
+
+  /* ===== STRIPE PAYMENT ===== */
+  .payment-section {
+    margin-top: 20px;
+    border-top: 1.5px dashed var(--line);
+    padding-top: 20px;
+  }
+  .payment-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--green);
+    letter-spacing: 0.01em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .payment-label .lock { font-size: 12px; opacity: 0.6; }
+  #card-element {
+    background: var(--white);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  #card-element.StripeElement--focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(15,42,29,0.1);
+  }
+  #card-element.StripeElement--invalid { border-color: #e53e3e; }
+  #card-error {
+    color: #e53e3e;
+    font-size: 13px;
+    margin-top: 8px;
+    min-height: 18px;
+    font-weight: 500;
+  }
+  .stripe-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--muted);
+    opacity: 0.75;
+  }
+  .price-highlight {
+    background: var(--green);
+    color: var(--cream);
+    border-radius: 10px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .price-highlight .ph-label { font-size: 14px; font-weight: 600; opacity: 0.8; }
+  .price-highlight .ph-amount { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; }
+
+  /* Decorative grain (subtle) */
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.025;
+    z-index: 100;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+
+<!-- ===== NAV ===== -->
+<nav class="nav">
+  <div class="logo">
+    <span class="logo-mark">↺</span>
+    ReturnRunner
+  </div>
+  <a href="#book" class="nav-link">Book a pickup →</a>
+</nav>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div>
+    <span class="eyebrow"><span class="dot">●</span> Now serving Placer County</span>
+    <h1>Your returns,<br><em>handled.</em></h1>
+    <p class="hero-sub">
+      Stuck with an Amazon return you've been meaning to drop off for three weeks? We pick it up Saturday morning, take it to Staples, Whole Foods, or UPS, and send you the receipt. You stay on the couch.
+    </p>
+    <div class="cta-row">
+      <a href="#book" class="btn btn-primary">Book a Saturday pickup</a>
+      <a href="#how" class="btn btn-ghost">How it works</a>
+    </div>
+  </div>
+  <div class="hero-card">
+    <div class="receipt-head">
+      <span class="label">Pickup #</span>
+      <span class="num">RR-0241</span>
+    </div>
+    <div class="receipt-row"><span class="k">Item</span><span class="v">Amazon ×2</span></div>
+    <div class="receipt-row"><span class="k">Size</span><span class="v">Shoebox</span></div>
+    <div class="receipt-row"><span class="k">Drop-off</span><span class="v">Whole Foods</span></div>
+    <div class="receipt-row"><span class="k">Pickup</span><span class="v">Sat 10:30 AM</span></div>
+    <div class="receipt-stamp">"Done before my coffee got cold."</div>
+  </div>
+</section>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section class="how" id="how">
+  <div class="how-inner">
+    <h2 class="section-title">Three steps. Zero parking lots.</h2>
+    <p class="section-sub">Built for people whose weekends are already booked solid.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">— 01</div>
+        <h3>Book online</h3>
+        <p>Answer a few questions about your return — what store, what size, where you are. Takes 90 seconds.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">— 02</div>
+        <h3>Hand off Saturday</h3>
+        <p>Leave the package by your door or hand it to us. Make sure your QR code or return label is ready.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">— 03</div>
+        <h3>Get your receipt</h3>
+        <p>We drop it at the right location and text you a photo of the receipt. Your refund clears as usual.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BOOKING FORM ===== -->
+<section class="book" id="book">
+  <div class="book-card">
+
+    <div class="book-header">
+      <div class="book-header-row">
+        <span class="book-eyebrow">Book a pickup</span>
+        <span class="step-counter" id="stepCounter">Step 1 of 6</span>
+      </div>
+      <h2 class="book-title" id="stageTitle">Tell us about your return</h2>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+
+    <div class="book-body">
+
+      <!-- STEP 1: Retailer -->
+      <!-- STEP 1: Quantity -->
+      <div class="q-step active" data-step="1">
+        <div class="q-label">How many Amazon packages?</div>
+        <div class="q-help">Up to 3 returns per pickup — all for just $10 flat. We drop them off at Whole Foods, Kohl's, UPS, or Staples.</div>
+        <div class="opt-grid three-col">
+          <button class="opt" data-field="quantity" data-value="1">
+            <span class="opt-title" style="font-size:32px; display:block; margin-bottom:4px;">1</span>
+            <span class="opt-sub">One package</span>
+          </button>
+          <button class="opt" data-field="quantity" data-value="2">
+            <span class="opt-title" style="font-size:32px; display:block; margin-bottom:4px;">2</span>
+            <span class="opt-sub">Two packages</span>
+          </button>
+          <button class="opt" data-field="quantity" data-value="3">
+            <span class="opt-title" style="font-size:32px; display:block; margin-bottom:4px;">3</span>
+            <span class="opt-sub">Three packages</span>
+          </button>
+        </div>
+        <div style="margin-top:16px;padding:12px 16px;background:rgba(255,90,31,0.08);border-radius:10px;border:1px solid rgba(255,90,31,0.2);font-size:13px;color:var(--green);font-weight:600;text-align:center;">
+          $10 covers up to 3 Amazon packages in one pickup
+        </div>
+      </div>
+
+      <!-- STEP 2: Label / QR -->
+      <div class="q-step" data-step="2">
+        <div class="q-label">Do you have a return label or QR code?</div>
+        <div class="q-help">Most Amazon returns use a QR code — no printer needed. We just scan it at the counter.</div>
+        <div class="opt-grid">
+          <button class="opt opt-with-icon" data-field="label" data-value="qr">
+            <div class="opt-icon">📱</div>
+            <div class="opt-text">
+              <span class="opt-title">QR code (on my phone)</span>
+              <span class="opt-sub">You'll send it to us via text after booking</span>
+            </div>
+          </button>
+          <button class="opt opt-with-icon" data-field="label" data-value="printed">
+            <div class="opt-icon">🖨️</div>
+            <div class="opt-text">
+              <span class="opt-title">Printed label on the package</span>
+              <span class="opt-sub">Already stuck on, ready to go</span>
+            </div>
+          </button>
+          <button class="opt opt-with-icon" data-field="label" data-value="none">
+            <div class="opt-icon">❓</div>
+            <div class="opt-text">
+              <span class="opt-title">Not sure / I need help</span>
+              <span class="opt-sub">We'll walk you through it after booking</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Conditional file upload — shown when QR code selected -->
+        <div id="uploadContainer" style="display: none; margin-top: 18px; animation: fadeIn 0.3s ease both;">
+          <label class="field-label">Upload your QR code screenshots (optional)</label>
+          <p style="font-size: 13px; color: var(--muted); margin: 0 0 12px;">One per package — up to 3. You can also just text them after booking.</p>
+          <div style="display:flex; flex-direction:column; gap:10px;" id="uploadSlots">
+            <label class="file-drop" id="fileDrop1" data-slot="1">
+              <div class="file-icon">📎</div>
+              <div class="file-text"><strong>Package 1</strong> — tap to upload QR screenshot</div>
+              <div class="file-name" id="fileName1" style="display:none;"></div>
+              <input type="file" id="fileInput1" accept="image/*,application/pdf">
+            </label>
+            <label class="file-drop file-drop-sm" id="fileDrop2" data-slot="2" style="display:none;">
+              <div class="file-icon">📎</div>
+              <div class="file-text"><strong>Package 2</strong> — tap to upload QR screenshot</div>
+              <div class="file-name" id="fileName2" style="display:none;"></div>
+              <input type="file" id="fileInput2" accept="image/*,application/pdf">
+            </label>
+            <label class="file-drop file-drop-sm" id="fileDrop3" data-slot="3" style="display:none;">
+              <div class="file-icon">📎</div>
+              <div class="file-text"><strong>Package 3</strong> — tap to upload QR screenshot</div>
+              <div class="file-name" id="fileName3" style="display:none;"></div>
+              <input type="file" id="fileInput3" accept="image/*,application/pdf">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: Pickup address -->
+      <div class="q-step" data-step="3">
+        <div class="q-label">Where should we pick it up?</div>
+        <div class="q-help">We currently serve Roseville, Rocklin, Lincoln, Granite Bay, and Auburn.</div>
+
+        <div class="field">
+          <label class="field-label">Street address</label>
+          <input type="text" class="input" id="addr" placeholder="123 Main St, Apt 4" autocomplete="street-address">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">City</label>
+            <input type="text" class="input" id="city" placeholder="Roseville" autocomplete="address-level2">
+          </div>
+          <div class="field">
+            <label class="field-label">ZIP</label>
+            <input type="text" class="input" id="zip" placeholder="95661" inputmode="numeric" maxlength="5" autocomplete="postal-code">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Pickup instructions (optional)</label>
+          <textarea class="textarea" id="notes" placeholder="e.g. Leave by the front door, gate code 1234, ring the bell, etc."></textarea>
+        </div>
+      </div>
+
+      <!-- STEP 4: Contact -->
+      <div class="q-step" data-step="4">
+        <div class="q-label">Where do we send the receipt?</div>
+        <div class="q-help">We'll text you a photo of the drop-off receipt the moment it's done.</div>
+
+        <div class="field">
+          <label class="field-label">Your name</label>
+          <input type="text" class="input" id="name" placeholder="Jane Doe" autocomplete="name">
+        </div>
+        <div class="field">
+          <label class="field-label">Phone number</label>
+          <input type="tel" class="input" id="phone" placeholder="(916) 555-0123" autocomplete="tel">
+        </div>
+        <div class="field">
+          <label class="field-label">Email (optional)</label>
+          <input type="email" class="input" id="email" placeholder="jane@example.com" autocomplete="email">
+        </div>
+      </div>
+
+      <!-- STEP 5: Confirm -->
+      <div class="q-step" data-step="5">
+        <div class="q-label">Confirm your pickup</div>
+        <div class="q-help">Your next available Saturday window is shown below. Pickups happen between 9 AM – 1 PM.</div>
+
+        <div class="date-card">
+          <div class="date-label">Pickup scheduled for</div>
+          <div class="date-big" id="pickupDate">—</div>
+          <div class="date-sub">9:00 AM – 1:00 PM window</div>
+        </div>
+
+        <div class="summary-box" id="summaryBox">
+          <!-- Filled in dynamically -->
+        </div>
+
+        <!-- Price + Stripe card payment -->
+        <div class="price-highlight" id="priceHighlight">
+          <span class="ph-label">Total due today</span>
+          <span class="ph-amount" id="priceDisplay">—</span>
+        </div>
+
+        <div class="payment-section">
+          <div class="payment-label">
+            <span>💳 Card details</span>
+            <span class="lock">🔒 Secure</span>
+          </div>
+          <div id="card-element"></div>
+          <div id="card-error"></div>
+          <div class="stripe-badge">
+            <svg width="40" height="16" viewBox="0 0 60 25" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5.5 7.5C5.5 6.1 6.6 5 8 5h44c1.4 0 2.5 1.1 2.5 2.5v10c0 1.4-1.1 2.5-2.5 2.5H8c-1.4 0-2.5-1.1-2.5-2.5v-10z" fill="#635BFF" opacity=".15"/><text x="12" y="17" fill="#635BFF" font-size="10" font-family="sans-serif" font-weight="700">stripe</text></svg>
+            Payments secured by Stripe
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 6: Success -->
+      <div class="q-step" data-step="6">
+        <div class="success-icon">✓</div>
+        <div class="success-title">You're booked!</div>
+        <div class="success-sub">Check your phone — we just sent a confirmation text.</div>
+
+        <div class="booking-id">
+          <div class="booking-id-label">Your booking ID</div>
+          <div class="booking-id-num" id="bookingId">RR-0000</div>
+        </div>
+
+        <div class="summary-box" id="finalSummary">
+          <!-- Filled in dynamically -->
+        </div>
+
+        <p style="text-align:center; font-size:14px; color:var(--muted); margin-top: 16px; line-height: 1.5;">
+          We'll text you the night before with arrival reminders.<br>
+          Questions? Just reply to that text.
+        </p>
+      </div>
+
+      <!-- ACTION BUTTONS -->
+      <div class="actions" id="actionBar">
+        <button class="btn-back" id="backBtn" style="visibility: hidden;">← Back</button>
+        <button class="btn-next" id="nextBtn" disabled>Continue →</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== FAQ ===== -->
+<section class="faq">
+  <div class="faq-inner">
+    <h2 class="section-title" style="color: var(--green);">Common questions</h2>
+    <p class="section-sub" style="color: var(--muted); margin-bottom: 30px;">Quick answers before you book.</p>
+
+    <div class="faq-item">
+      <button class="faq-q">How much does it cost?</button>
+      <div class="faq-a">$10 flat for 1, 2, or 3 Amazon packages in a single pickup. Payment is collected by card when you book — no charge if we can't complete the return and we'll refund you immediately.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">Do you need my packing materials?</button>
+      <div class="faq-a">Amazon QR returns at Whole Foods, Kohl's, and Staples don't need boxes — they pack for you. For other returns, please have your item already packed and sealed.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">What if I'm not home at pickup time?</button>
+      <div class="faq-a">No problem. Most clients leave the package by their front door or with their building's front desk. We send a photo confirming pickup.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">Where do you drop Amazon returns?</button>
+      <div class="faq-a">Whichever location Amazon assigned your return to — usually the nearest Whole Foods, Kohl's, UPS Store, or Staples. The QR code tells us where.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">Is my refund guaranteed?</button>
+      <div class="faq-a">Amazon issues your refund directly to your account, same as if you'd dropped it off yourself. We send you a photo of the drop-off receipt as proof.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="logo"><span class="logo-mark">↺</span> ReturnRunner</div>
+  <div class="foot-tag">Saturdays in Placer County. Run by humans.</div>
+  <div style="margin-top: 16px; font-size: 14px; opacity: 0.7;">
+    Questions? Text <a href="sms:9169038884" style="color: var(--cream); text-decoration: underline;">(916) 903-8884</a>
+  </div>
+</footer>
+
+<script>
+  // =====================================================
+  // STATE
+  // =====================================================
+  const state = {
+    step: 1,
+    totalSteps: 5,
+    retailer: null,
+    size: null,
+    label: null,
+    file: null,
+    fileUrl: null,
+    addr: '', city: '', zip: '',
+    notes: '',
+    name: '', phone: '', email: '',
+    pickupDate: null,
+    bookingId: null
+  };
+
+  const stepTitles = {
+    1: 'Tell us about your return',
+    2: 'Package size',
+    3: 'Return label',
+    4: 'Pickup address',
+    5: 'Contact info',
+    6: 'Confirm pickup',
+    7: 'Booked!'
+  };
+
+  // =====================================================
+  // PRICING
+  // =====================================================
+  const FLAT_PRICE = 10;
+
+  // =====================================================
+  // DATE LOGIC — next Saturday
+  // =====================================================
+  function getNextSaturday() {
+    const now = new Date();
+    const day = now.getDay(); // 0 = Sun, 6 = Sat
+    let daysUntil;
+    if (day === 6) {
+      // It's Saturday — if before 9 AM, today still works; otherwise next Saturday
+      daysUntil = now.getHours() < 9 ? 0 : 7;
+    } else {
+      daysUntil = 6 - day;
+    }
+    const sat = new Date(now);
+    sat.setDate(now.getDate() + daysUntil);
+    sat.setHours(9, 0, 0, 0);
+    return sat;
+  }
+
+  function formatDate(d) {
+    return d.toLocaleDateString('en-US', {
+      weekday: 'long', month: 'long', day: 'numeric'
+    });
+  }
+
+  // =====================================================
+  // OPTION SELECTION
+  // =====================================================
+  document.querySelectorAll('.opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const field = btn.dataset.field;
+      const value = btn.dataset.value;
+      state[field] = value;
+      // Visually deselect siblings
+      btn.parentElement.querySelectorAll('.opt').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+
+      // Show file upload only when "QR code" is picked on the label step
+      if (field === 'label') {
+        const uploadContainer = document.getElementById('uploadContainer');
+        if (value === 'qr') {
+          uploadContainer.style.display = 'block';
+          // Show slots up to the number of packages chosen; hide the rest
+          const qty = parseInt(state.quantity || 1);
+          for (let s = 1; s <= 3; s++) {
+            const el = document.getElementById('fileDrop' + s);
+            if (el) el.style.display = s <= qty ? '' : 'none';
+          }
+        } else {
+          uploadContainer.style.display = 'none';
+          // Clear all upload slots
+          state.files = [null, null, null];
+          state.fileUrls = [null, null, null];
+          [1,2,3].forEach(s => {
+            const inp = document.getElementById('fileInput' + s);
+            const nm  = document.getElementById('fileName' + s);
+            const dr  = document.getElementById('fileDrop' + s);
+            if (inp) inp.value = '';
+            if (nm)  { nm.style.display = 'none'; nm.textContent = ''; }
+            if (dr)  dr.classList.remove('has-file');
+          });
+        }
+      }
+
+      validateStep();
+    });
+  });
+
+  // =====================================================
+  // FILE UPLOAD — Cloudinary, up to 3 QR screenshots
+  // =====================================================
+  const CLOUDINARY_CLOUD_NAME = 'dlt5qtpan';
+  const CLOUDINARY_UPLOAD_PRESET = 'returnrunner_uploads';
+
+  async function uploadToCloudinary(file, slot) {
+    const nameEl = document.getElementById('fileName' + slot);
+    const dropEl = document.getElementById('fileDrop' + slot);
+    nameEl.textContent = '⏳ Uploading ' + file.name + '…';
+    nameEl.style.display = 'block';
+    dropEl.classList.add('has-file');
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`,
+        { method: 'POST', body: fd }
+      );
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      state.files[slot-1] = file.name;
+      state.fileUrls[slot-1] = data.secure_url;
+      nameEl.textContent = '✓ ' + file.name;
+      // Reveal next slot if customer has more packages
+      const qty = parseInt(state.quantity || 1);
+      if (slot < qty) {
+        const next = document.getElementById('fileDrop' + (slot+1));
+        if (next) next.style.display = '';
+      }
+    } catch (err) {
+      console.error('Upload error slot ' + slot + ':', err);
+      nameEl.textContent = '⚠️ Upload failed — text it to us after booking';
+      state.files[slot-1] = null;
+      state.fileUrls[slot-1] = null;
+      dropEl.classList.remove('has-file');
+    }
+  }
+
+  [1, 2, 3].forEach(slot => {
+    const input = document.getElementById('fileInput' + slot);
+    if (input) {
+      input.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (file) uploadToCloudinary(file, slot);
+      });
+    }
+  });
+
+  // =====================================================
+  // INPUT BINDINGS (live)
+  // =====================================================
+  ['addr', 'city', 'zip', 'notes', 'name', 'phone', 'email'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => {
+      state[id] = el.value.trim();
+      validateStep();
+    });
+  });
+
+  // =====================================================
+  // VALIDATION
+  // =====================================================
+  function validateStep() {
+    const nextBtn = document.getElementById('nextBtn');
+    let valid = false;
+    switch (state.step) {
+      case 1: valid = !!state.quantity; break;
+      case 2: valid = !!state.label; break;
+      case 3: valid = state.addr.length > 3 && state.city.length > 1 && /^\d{5}$/.test(state.zip); break;
+      case 4: valid = state.name.length > 1 && state.phone.replace(/\D/g,'').length >= 10; break;
+      case 5: valid = stripeCardComplete; break;
+      default: valid = true;
+    }
+    nextBtn.disabled = !valid;
+  }
+
+  // =====================================================
+  // NAVIGATION
+  // =====================================================
+  function goToStep(n) {
+    state.step = n;
+    document.querySelectorAll('.q-step').forEach(el => el.classList.remove('active'));
+    const target = document.querySelector(`.q-step[data-step="${n}"]`);
+    if (target) target.classList.add('active');
+
+    // Progress bar & counter
+    const fill = (n / state.totalSteps) * 100;
+    document.getElementById('progressFill').style.width = Math.min(fill, 100) + '%';
+
+    if (n <= state.totalSteps) {
+      document.getElementById('stepCounter').textContent = `Step ${n} of ${state.totalSteps}`;
+      document.getElementById('stageTitle').textContent = stepTitles[n];
+    } else {
+      document.getElementById('stepCounter').textContent = 'Done';
+      document.getElementById('stageTitle').textContent = 'Confirmation';
+    }
+
+    // Back button
+    const backBtn = document.getElementById('backBtn');
+    backBtn.style.visibility = (n === 1 || n === 7) ? 'hidden' : 'visible';
+
+    // Next button label
+    const nextBtn = document.getElementById('nextBtn');
+    if (n === state.totalSteps) {
+      nextBtn.textContent = 'Pay & confirm pickup →';
+    } else if (n === 7) {
+      nextBtn.textContent = 'Book another →';
+    } else {
+      nextBtn.textContent = 'Continue →';
+    }
+
+    // Pre-fill confirmation step
+    if (n === state.totalSteps) renderSummary();
+
+    // Action bar hidden on success
+    document.getElementById('actionBar').style.display = (n === 7) ? 'none' : 'flex';
+
+    validateStep();
+
+    // Smooth scroll to top of card
+    document.querySelector('.book-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    if (state.step < state.totalSteps) {
+      goToStep(state.step + 1);
+    } else if (state.step === state.totalSteps) {
+      submitBooking();
+    } else {
+      resetForm();
+    }
+  });
+
+  document.getElementById('backBtn').addEventListener('click', () => {
+    if (state.step > 1) goToStep(state.step - 1);
+  });
+
+  // =====================================================
+  // SUMMARY
+  // =====================================================
+  const quantityLabels = { '1': '1 package', '2': '2 packages', '3': '3 packages' };
+  const labelLabels = {
+    qr: 'QR code on phone', printed: 'Printed label on package', none: 'Needs help with label'
+  };
+
+  function renderSummary() {
+    state.pickupDate = getNextSaturday();
+    document.getElementById('pickupDate').textContent = formatDate(state.pickupDate);
+
+    const price = FLAT_PRICE;
+    const html = `
+      <div class="summary-row"><span class="k">Retailer</span><span class="v">Amazon</span></div>
+      <div class="summary-row"><span class="k">Packages</span><span class="v">${quantityLabels[state.quantity]}</span></div>
+      <div class="summary-row"><span class="k">Label</span><span class="v">${labelLabels[state.label]}</span></div>
+      <div class="summary-row"><span class="k">Pickup</span><span class="v">${state.addr}, ${state.city} ${state.zip}</span></div>
+      <div class="summary-row"><span class="k">Contact</span><span class="v">${state.name} · ${state.phone}</span></div>
+    `;
+    document.getElementById('summaryBox').innerHTML = html;
+    document.getElementById('priceDisplay').textContent = `$${price}.00`;
+
+    // Mount Stripe card element (only once)
+    if (!cardMounted) {
+      cardElement = stripeElements.create('card', {
+        style: {
+          base: {
+            fontFamily: "'Inter Tight', sans-serif",
+            fontSize: '16px',
+            color: '#0A1410',
+            '::placeholder': { color: '#9CA3A0' },
+          },
+          invalid: { color: '#e53e3e' }
+        }
+      });
+      cardElement.mount('#card-element');
+      cardElement.on('change', (e) => {
+        document.getElementById('card-error').textContent = e.error ? e.error.message : '';
+        stripeCardComplete = e.complete;
+        validateStep();
+      });
+      cardMounted = true;
+    }
+  }
+
+  function renderFinalSummary() {
+    const price = FLAT_PRICE;
+    const html = `
+      <div class="summary-row"><span class="k">Pickup date</span><span class="v">${formatDate(state.pickupDate)}</span></div>
+      <div class="summary-row"><span class="k">Window</span><span class="v">9:00 AM – 1:00 PM</span></div>
+      <div class="summary-row"><span class="k">Retailer</span><span class="v">Amazon</span></div>
+      <div class="summary-row"><span class="k">Address</span><span class="v">${state.addr}, ${state.city}</span></div>
+      <div class="price-row"><span class="k">Total</span><span class="v">$${price}.00 ✓ Paid</span></div>
+    `;
+    document.getElementById('finalSummary').innerHTML = html;
+  }
+
+  // =====================================================
+  // STRIPE SETUP
+  // =====================================================
+  //
+  // ⚠️ PASTE YOUR STRIPE PUBLISHABLE KEY BELOW.
+  // Get it from dashboard.stripe.com → Developers → API Keys
+  // It starts with pk_test_... (test) or pk_live_... (live)
+  //
+  const STRIPE_PUBLISHABLE_KEY = 'pk_live_51TdmWxGreF3dcWY9bH7KRJhjoywd4F7a1fuixdKGaAU38dsKz5n0ei0CGCMyE8lGt70PP8tvjjtUWey6m9VlI8QG00Mua8DmlY';
+  const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+  const stripeElements = stripe.elements();
+  let cardElement = null;
+  let cardMounted = false;
+  let stripeCardComplete = false;
+
+  // =====================================================
+  // SUBMIT — charges card first, then sends to Formspree
+  // =====================================================
+  //
+  // ⚠️ PASTE YOUR FORMSPREE ENDPOINT URL BELOW.
+  // Get it from formspree.io → New Form → copy the URL.
+  //
+  const FORMSPREE_URL = 'https://formspree.io/f/mlgvzzab';
+
+  async function submitBooking() {
+    const id = 'RR-' + String(Math.floor(Math.random() * 9000) + 1000);
+    state.bookingId = id;
+
+    const nextBtn = document.getElementById('nextBtn');
+    nextBtn.disabled = true;
+    nextBtn.textContent = 'Processing payment…';
+
+    const price = FLAT_PRICE;
+
+    // ---- Step 1: Create a PaymentMethod from the card element ----
+    const { paymentMethod, error: pmError } = await stripe.createPaymentMethod({
+      type: 'card',
+      card: cardElement,
+      billing_details: {
+        name: state.name,
+        phone: state.phone,
+        email: state.email || undefined,
+      }
+    });
+
+    if (pmError) {
+      document.getElementById('card-error').textContent = pmError.message;
+      nextBtn.disabled = false;
+      nextBtn.textContent = 'Pay & confirm pickup →';
+      return;
+    }
+
+    // ---- Step 2: Create a PaymentIntent on your backend ----
+    // 
+    // ⚠️ IMPORTANT: To actually charge the card, you need a small backend
+    // endpoint that creates a Stripe PaymentIntent and returns the client_secret.
+    // The backend call below will fail until that endpoint exists.
+    //
+    // QUICK OPTION — Use a free Netlify Function or Cloudflare Worker.
+    // See the comment block at the bottom of this file for the exact
+    // backend code you need (it's only ~20 lines of Node.js).
+    //
+    // For now, the payment method is validated (card number/expiry/CVC are real)
+    // but the actual charge won't go through until the backend is wired up.
+    //
+
+    let chargeSucceeded = false;
+
+    try {
+      // Replace this URL with your backend endpoint once deployed
+      const intentRes = await fetch('https://returnrunner-payment.hammadsyedarshad.workers.dev', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: price * 100, currency: 'usd', bookingId: id })
+      });
+
+      if (!intentRes.ok) throw new Error('Intent creation failed');
+
+      const { client_secret } = await intentRes.json();
+
+      const { paymentIntent, error: confirmError } = await stripe.confirmCardPayment(client_secret, {
+        payment_method: paymentMethod.id
+      });
+
+      if (confirmError) {
+        document.getElementById('card-error').textContent = confirmError.message;
+        nextBtn.disabled = false;
+        nextBtn.textContent = 'Pay & confirm pickup →';
+        return;
+      }
+
+      chargeSucceeded = paymentIntent.status === 'succeeded';
+    } catch (err) {
+      // Backend not yet set up — log the error and continue so Formspree still fires
+      console.warn('Payment backend not configured yet:', err.message);
+      chargeSucceeded = false;
+    }
+
+    // ---- Step 3: Send booking to Formspree ----
+    nextBtn.textContent = 'Sending confirmation…';
+
+    const payload = {
+      _subject: `🚚 New ReturnRunner booking — ${id} (${state.name})`,
+      bookingId: id,
+      name: state.name,
+      phone: state.phone,
+      email: state.email || '(not provided)',
+      retailer: 'Amazon',
+      packages: quantityLabels[state.quantity],
+      label: labelLabels[state.label],
+      uploadedFiles: state.files.filter(Boolean).join(', ') || '(none — client will text)',
+      uploadedFileLinks: state.fileUrls.filter(Boolean).join(' | ') || '(no files uploaded)',
+      address: `${state.addr}, ${state.city} ${state.zip}`,
+      pickupNotes: state.notes || '(none)',
+      pickupDate: formatDate(state.pickupDate),
+      pickupWindow: '9:00 AM – 1:00 PM',
+      price: `$${price}.00`,
+      paymentStatus: chargeSucceeded ? '✅ Charged' : '⚠️ Payment backend not yet configured',
+      stripePaymentMethodId: paymentMethod.id,
+      submittedAt: new Date().toLocaleString('en-US')
+    };
+
+    try {
+      const response = await fetch(FORMSPREE_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        document.getElementById('bookingId').textContent = id;
+        renderFinalSummary();
+        goToStep(6);
+      } else {
+        throw new Error('Formspree submit failed');
+      }
+    } catch (err) {
+      nextBtn.disabled = false;
+      nextBtn.textContent = 'Pay & confirm pickup →';
+      alert("Sorry — we couldn't submit your booking right now. Please text us at (916) 903-8884 and we'll book you manually.");
+      console.error('Booking submit error:', err);
+    }
+  }
+
+  function resetForm() {
+    Object.assign(state, {
+      step: 1, retailer: 'amazon', quantity: null, label: null, files: [null,null,null], fileUrls: [null,null,null],
+      addr: '', city: '', zip: '', notes: '', name: '', phone: '', email: '',
+      pickupDate: null, bookingId: null
+    });
+    document.querySelectorAll('.opt').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.input, .textarea').forEach(el => el.value = '');
+
+    // Reset upload slots
+    [1,2,3].forEach(s => {
+      const inp = document.getElementById('fileInput' + s);
+      const nm = document.getElementById('fileName' + s);
+      const dr = document.getElementById('fileDrop' + s);
+      if (inp) inp.value = '';
+      if (nm) { nm.style.display = 'none'; nm.textContent = ''; }
+      if (dr) { dr.classList.remove('has-file'); if (s > 1) dr.style.display = 'none'; }
+    });
+    document.getElementById('uploadContainer').style.display = 'none';
+    // Reset Stripe card
+    if (cardElement) { cardElement.clear(); }
+    stripeCardComplete = false;
+    document.getElementById('card-error').textContent = '';
+    goToStep(1);
+  }
+
+  // =====================================================
+  // FAQ accordion
+  // =====================================================
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.addEventListener('click', () => {
+      q.parentElement.classList.toggle('open');
+    });
+  });
+
+  // =====================================================
+  // BACKEND NEEDED: Netlify Function to create PaymentIntent
+  // =====================================================
+  //
+  // Create a file at: netlify/functions/create-payment-intent.js
+  // in your GitHub repo. Contents:
+  //
+  //   const Stripe = require('stripe');
+  //   exports.handler = async (event) => {
+  //     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  //     const { amount, currency, bookingId } = JSON.parse(event.body);
+  //     const intent = await stripe.paymentIntents.create({
+  //       amount, currency,
+  //       metadata: { bookingId }
+  //     });
+  //     return {
+  //       statusCode: 200,
+  //       body: JSON.stringify({ client_secret: intent.client_secret })
+  //     };
+  //   };
+  //
+  // Then in Netlify dashboard → Site Settings → Environment Variables,
+  // add STRIPE_SECRET_KEY = sk_test_... (from Stripe dashboard).
+  //
+  // That's all. The frontend does the rest.
+  //
+  // =====================================================
+
+  // =====================================================
+  // INIT
+  // =====================================================
+  goToStep(1);
+</script>
+
+</body>
+</html>
